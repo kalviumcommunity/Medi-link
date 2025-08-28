@@ -1,21 +1,29 @@
+// server.js
 import express from "express";
 import cors from "cors";
 import { askLLM } from "./llm.js";
 
 const app = express();
+const PORT = 5000;
+
 app.use(cors());
 app.use(express.json());
 
 app.post("/api/query", async (req, res) => {
-  const { query } = req.body;
-  if (!query) return res.status(400).json({ error: "Query is required" });
+  try {
+    const { query } = req.body;
+    if (!query || typeof query !== "string") {
+      return res.status(400).json({ error: "Query must be a string" });
+    }
 
-  const result = await askLLM(query);
-  res.json(result);
+    const response = await askLLM(query);
+    res.json({ summary: response });
+  } catch (err) {
+    console.error("❌ Error:", err.message);
+    res.status(500).json({ error: "Internal server error" });
+  }
 });
 
-app.get("/", (req, res) => {
-  res.send("MediLink backend is running!");
+app.listen(PORT, () => {
+  console.log(`✅ Server running at http://localhost:${PORT}`);
 });
-
-app.listen(5000, () => console.log("✅ Server running on http://localhost:5000"));

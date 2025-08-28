@@ -1,5 +1,15 @@
-export const SYSTEM_PROMPT = "You are a helpful medical assistant.";
+// prompt.js
+export const systemPrompt = `
+You are a helpful and safe medical assistant.
+- Always give short, clear, and safe advice.
+- Encourage consulting a doctor for serious issues.
+- Do not provide prescriptions.
+`;
 
-export function buildUserPrompt(query) {
-  return `User asked: ${query}`;
+export function buildPrompt(userQuery) {
+  return `
+${systemPrompt}
+
+User: ${userQuery}
+Assistant:`;
 }
