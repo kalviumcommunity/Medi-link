@@ -1,72 +1,44 @@
 // prompt.js
 
-// ---- System prompt (unchanged policy, tweak as needed) ----
 export const systemPrompt = `
-You are a helpful and safe medical assistant.
-- Always give short, clear, and safe advice.
-- Encourage consulting a doctor for serious issues.
-- Do not provide prescriptions.
+You are a safe medical assistant.
+ALWAYS respond ONLY in valid JSON (no extra text).
+JSON schema:
+{
+  "summary": "short text summary of the issue",
+  "riskLevel": "low | medium | high",
+  "nextSteps": ["list of next steps as short strings"]
+}
+Guidelines:
+- Never prescribe medication.
+- Encourage professional consultation for serious concerns.
 `;
 
-// ---- Minimal internal KB (replace with RAG later) ----
-const knowledgeBase = Object.freeze({
-  headache: "Headaches are often caused by stress, dehydration, or lack of sleep.",
-  fever: "Fevers can be a sign of infection. Rest and hydration are important.",
-  cough: "Coughs may be due to colds, flu, or allergies. If persistent, consult a doctor.",
-  dehydration: "Drink fluids regularly; watch for dizziness, dry mouth, and dark urine.",
-});
+const knowledgeBase = {
+  headache: "Headaches are often linked to stress, dehydration, or lack of sleep.",
+  fever: "Fevers may indicate infection. Stay hydrated and monitor temperature.",
+  cough: "Coughing can be due to colds, allergies, or infections."
+};
 
-// ---- Helpers (prevent inherited key iteration, improve matching) ----
-function normalize(text) {
-  return text
-    .toLowerCase()
-    .replace(/[^a-z0-9\s]/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
+export function getDynamicContext(userQuery) {
+  const lcQuery = userQuery.toLowerCase();
+  const matches = Object.keys(knowledgeBase).filter((key) =>
+    lcQuery.includes(key)
+  );
+  return matches.map((m) => knowledgeBase[m]);
 }
 
-function stem(word) {
-  // ultralight stemming to catch "feverish", "coughing", "headaches"
-  return word
-    .replace(/(ing|ish|es|s)$/i, "")
-    .replace(/(ed)$/i, "");
-}
+export function buildStructuredPrompt(userQuery) {
+  const contexts = getDynamicContext(userQuery);
 
-// Exported for unit tests / reuse
-export function getDynamicContexts(userQuery, { maxContexts = 3 } = {}) {
-  const q = normalize(userQuery);
-  if (!q) return { contexts: [], matchedKeywords: [] };
+  const contextBlock =
+    contexts.length > 0 ? `Context:\n- ${contexts.join("\n- ")}\n` : "";
 
-  const words = new Set(q.split(" ").map(stem));
-
-  const keys = Object.keys(knowledgeBase); // prevents inherited iteration
-  const matched = [];
-  for (const key of keys) {
-    // match exact stem or synonym-like containment by stem
-    const keyStem = stem(key);
-    if (words.has(keyStem)) matched.push(key);
-    if (matched.length >= maxContexts) break;
-  }
-
-  const contexts = matched.map(k => knowledgeBase[k]);
-  return { contexts, matchedKeywords: matched };
-}
-
-// ---- Prompt builder: includes context only when present ----
-export function buildPrompt(userQuery) {
-  const cleanedQuery = userQuery.trim();
-  const { contexts, matchedKeywords } = getDynamicContexts(cleanedQuery);
-
-  const contextBlock = contexts.length
-    ? `Context:\n- ${contexts.join("\n- ")}\n`
-    : ""; // no noisy "No extra context..." line
-
-  const prompt = `
+  return `
 ${systemPrompt}
 
-${contextBlock}User: ${cleanedQuery}
+${contextBlock}
+User: ${userQuery}
 Assistant:
   `.trim();
-
-  return { prompt, matchedKeywords };
 }
