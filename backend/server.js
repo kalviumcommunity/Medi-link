@@ -7,19 +7,14 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// POST /api/query
 app.post("/api/query", async (req, res) => {
   try {
     const { query } = req.body;
-
     if (typeof query !== "string" || !query.trim()) {
       return res.status(400).json({ error: "Query must be a non-empty string" });
     }
-
     const response = await askLLM(query.trim());
-
-    // Standard response format
-    res.json({ summary: response });
+    res.json({ summary: response }); // keep response shape consistent
   } catch (err) {
     if (process.env.NODE_ENV === "development") {
       console.error("❌ Error:", err.stack);
