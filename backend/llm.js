@@ -1,19 +1,17 @@
 // llm.js
-import { findHospital } from "./functions.js";
+import { searchKnowledge } from "./embeddings.js";
 
-export async function handleLLM(query) {
-  if (query.toLowerCase().includes("hospital")) {
-    const cityMatch = query.match(/in\s+(\w+)/i);
-    if (cityMatch) {
-      const city = cityMatch[1];
-      const hospitals = findHospital(city);
-      return { type: "answer", content: hospitals };
-    }
-    return { type: "answer", content: ["Please specify a city."] };
-  }
+export async function askLLM(query) {
+  // 1. Search knowledge base with embeddings
+  const context = searchKnowledge(query);
 
+  // 2. Return structured response
   return {
     type: "answer",
-    content: ["This query does not require a function call."]
+    query,
+    context,
+    response: context
+      ? `Based on our knowledge: ${context}`
+      : "Sorry, I could not find relevant information."
   };
 }
