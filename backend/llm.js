@@ -1,16 +1,17 @@
-import { SYSTEM_PROMPT, buildUserPrompt } from "./prompt.js";
+// llm.js
+import { buildPrompt } from "./prompt.js";
 
+// Simulated LLM call
 export async function askLLM(query) {
-  const systemPrompt = SYSTEM_PROMPT;
-  const userPrompt = buildUserPrompt(query);
+  const finalPrompt = buildPrompt(query);
 
-  console.log("=== Prompt Sent to AI (mock) ===");
-  console.log(systemPrompt);
-  console.log(userPrompt);
-
-  // Mocked AI response
-  if (query.toLowerCase().includes("headache")) {
-    return { summary: "You may have a headache. Drink water and rest." };
+  // Log prompt only in dev (to avoid leaking in production)
+  if (process.env.NODE_ENV !== "production") {
+    console.log("=== Prompt Sent to AI ===");
+    console.log(finalPrompt);
+    console.log("==========================");
   }
-  return { summary: "I suggest consulting a doctor for more details." };
+
+  // Mock AI response
+  return "This is a mock AI response based on system + user prompts.";
 }
