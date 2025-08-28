@@ -1,4 +1,6 @@
 // prompt.js
+
+// System-level instruction
 export const systemPrompt = `
 You are a helpful and safe medical assistant.
 - Always give short, clear, and safe advice.
@@ -6,10 +8,13 @@ You are a helpful and safe medical assistant.
 - Do not provide prescriptions.
 `;
 
+// Function to build the full prompt
 export function buildPrompt(userQuery) {
+  const cleanedQuery = userQuery.trim();
   return `
 ${systemPrompt}
 
-User: ${userQuery}
-Assistant:`;
+User: ${cleanedQuery}
+Assistant:
+  `;
 }
