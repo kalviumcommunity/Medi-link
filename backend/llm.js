@@ -1,31 +1,19 @@
 // llm.js
-import { buildStructuredPrompt } from "./prompt.js";
+import { findHospital } from "./functions.js";
 
-export async function askLLM(query) {
-  const prompt = buildStructuredPrompt(query);
-
-  // Mock response for now
-  const fakeLLMResponse = `{
-    "summary": "Headache likely due to stress or dehydration.",
-    "riskLevel": "low",
-    "nextSteps": [
-      "Rest in a quiet place",
-      "Drink water",
-      "Consult a doctor if it persists more than 2 days"
-    ]
-  }`;
-
-  let parsed;
-  try {
-    parsed = JSON.parse(fakeLLMResponse);
-  } catch {
-    // 👇 No noisy stacktrace, just fallback
-    parsed = {
-      summary: "Unable to generate structured response.",
-      riskLevel: "unknown",
-      nextSteps: []
-    };
+export async function handleLLM(query) {
+  if (query.toLowerCase().includes("hospital")) {
+    const cityMatch = query.match(/in\s+(\w+)/i);
+    if (cityMatch) {
+      const city = cityMatch[1];
+      const hospitals = findHospital(city);
+      return { type: "answer", content: hospitals };
+    }
+    return { type: "answer", content: ["Please specify a city."] };
   }
 
-  return parsed;
+  return {
+    type: "answer",
+    content: ["This query does not require a function call."]
+  };
 }
